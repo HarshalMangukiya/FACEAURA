@@ -1,0 +1,117 @@
+INFO 2026-06-24 23:55:48,245 views User 1: Initiating face detection on image 1
+ERROR 2026-06-24 23:55:48,248 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-24 23:55:53,461 views User 1: Image 99999 not found
+ERROR 2026-06-24 23:55:58,598 views User 1: Face detection request missing image_id
+INFO 2026-06-24 23:56:03,469 views User 1: Initiating face detection on image 1
+WARNING 2026-06-24 23:56:03,472 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-24 23:56:08,471 views User 1: Initiating face detection on image 1
+WARNING 2026-06-24 23:56:08,474 views User 1: Detection failed - No face detected
+WARNING 2026-06-24 23:56:13,706 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-24 23:56:18,842 views User 1: Initiating face detection on image 1
+INFO 2026-06-24 23:56:18,844 views User 1: Visual debug image created for image 1
+INFO 2026-06-24 23:56:18,844 views User 1: Face analysis successful for image 1
+INFO 2026-06-24 23:59:42,114 views User 1: Initiating face detection on image 3
+INFO 2026-06-24 23:59:42,120 views User 1: Initiating face detection on image 3
+ERROR 2026-06-24 23:59:42,188 views User 1: Face detection exception: module 'mediapipe' has no attribute 'solutions'
+ERROR 2026-06-24 23:59:42,218 views User 1: Face detection exception: module 'mediapipe' has no attribute 'solutions'
+INFO 2026-06-25 00:00:07,351 views User 1: Initiating face detection on image 2
+ERROR 2026-06-25 00:00:07,400 views User 1: Face detection exception: module 'mediapipe' has no attribute 'solutions'
+INFO 2026-06-25 00:05:52,203 views User 1: Initiating face detection on image 1
+ERROR 2026-06-25 00:05:52,206 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-25 00:05:57,415 views User 1: Image 99999 not found
+ERROR 2026-06-25 00:06:02,401 views User 1: Face detection request missing image_id
+INFO 2026-06-25 00:06:07,396 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 00:06:07,398 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-25 00:06:12,481 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 00:06:12,485 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 00:06:17,574 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-25 00:06:22,746 views User 1: Initiating face detection on image 1
+INFO 2026-06-25 00:06:22,750 views User 1: Visual debug image created for image 1
+INFO 2026-06-25 00:06:22,750 views User 1: Face analysis successful for image 1
+INFO 2026-06-25 00:08:34,373 views User 1: Initiating face detection on image 1
+ERROR 2026-06-25 00:08:34,377 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-25 00:08:39,852 views User 1: Image 99999 not found
+ERROR 2026-06-25 00:08:45,413 views User 1: Face detection request missing image_id
+INFO 2026-06-25 00:08:51,068 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 00:08:51,070 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-25 00:08:54,185 views User 1: Initiating face detection on image 4
+INFO 2026-06-25 00:08:54,283 views User 1: Initiating face detection on image 4
+INFO 2026-06-25 00:08:56,887 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 00:08:56,889 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 00:08:57,562 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 00:08:57,586 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 00:09:02,336 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-25 00:09:07,601 views User 1: Initiating face detection on image 1
+INFO 2026-06-25 00:09:07,603 views User 1: Visual debug image created for image 1
+INFO 2026-06-25 00:09:07,603 views User 1: Face analysis successful for image 1
+INFO 2026-06-25 00:10:34,988 views User 1: Initiating face detection on image 3
+INFO 2026-06-25 00:10:38,555 views User 1: Visual debug image created for image 3
+INFO 2026-06-25 00:10:38,556 views User 1: Face analysis successful for image 3
+INFO 2026-06-25 20:06:06,124 views User 1: Initiating face detection on image 5
+INFO 2026-06-25 20:06:06,127 views User 1: Initiating face detection on image 5
+INFO 2026-06-25 20:06:10,370 views User 1: Visual debug image created for image 5
+INFO 2026-06-25 20:06:10,371 views User 1: Visual debug image created for image 5
+INFO 2026-06-25 20:06:10,371 views User 1: Face analysis successful for image 5
+INFO 2026-06-25 20:06:10,371 views User 1: Face analysis successful for image 5
+INFO 2026-06-25 20:08:30,974 views User 1: Initiating face detection on image 1
+ERROR 2026-06-25 20:08:30,975 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-25 20:08:33,058 views User 1: Image 99999 not found
+ERROR 2026-06-25 20:08:35,122 views User 1: Face detection request missing image_id
+INFO 2026-06-25 20:08:37,177 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:08:37,178 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-25 20:08:39,243 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:08:39,244 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 20:08:41,308 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-25 20:08:43,367 views User 1: Initiating face detection on image 1
+INFO 2026-06-25 20:08:43,368 views User 1: Visual debug image created for image 1
+INFO 2026-06-25 20:08:43,368 views User 1: Face analysis successful for image 1
+INFO 2026-06-25 20:14:36,521 views User 1: Initiating face detection on image 1
+ERROR 2026-06-25 20:14:36,522 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-25 20:14:38,617 views User 1: Image 99999 not found
+ERROR 2026-06-25 20:14:40,741 views User 1: Face detection request missing image_id
+INFO 2026-06-25 20:14:42,812 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:14:42,813 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-25 20:14:44,891 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:14:44,892 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 20:14:46,966 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-25 20:14:49,040 views User 1: Initiating face detection on image 1
+INFO 2026-06-25 20:14:49,041 views User 1: Visual debug image created for image 1
+INFO 2026-06-25 20:14:49,041 views User 1: Face analysis successful for image 1
+INFO 2026-06-25 20:15:00,966 views User 1: Visual shape analysis debug image created for image 1
+WARNING 2026-06-25 20:15:03,056 views User 1 unauthorized access attempt to image 2
+ERROR 2026-06-25 20:15:03,057 views User 1: Face shape detection request missing image_id
+INFO 2026-06-25 20:15:56,661 views User 1: Initiating face detection on image 1
+ERROR 2026-06-25 20:15:56,662 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-25 20:15:58,733 views User 1: Image 99999 not found
+ERROR 2026-06-25 20:16:00,799 views User 1: Face detection request missing image_id
+INFO 2026-06-25 20:16:02,850 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:16:02,851 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-25 20:16:04,908 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:16:04,909 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 20:16:06,972 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-25 20:16:09,053 views User 1: Initiating face detection on image 1
+INFO 2026-06-25 20:16:09,055 views User 1: Visual debug image created for image 1
+INFO 2026-06-25 20:16:09,055 views User 1: Face analysis successful for image 1
+INFO 2026-06-25 20:16:20,667 views User 1: Visual shape analysis debug image created for image 1
+WARNING 2026-06-25 20:16:22,725 views User 1 unauthorized access attempt to image 2
+ERROR 2026-06-25 20:16:22,726 views User 1: Face shape detection request missing image_id
+INFO 2026-06-25 20:16:57,814 views User 1: Initiating face detection on image 5
+INFO 2026-06-25 20:17:01,385 views User 1: Visual debug image created for image 5
+INFO 2026-06-25 20:17:01,386 views User 1: Face analysis successful for image 5
+INFO 2026-06-25 20:17:21,305 views User 1: Initiating face detection on image 1
+ERROR 2026-06-25 20:17:21,306 views User 1: Face detection exception: Corrupted image
+ERROR 2026-06-25 20:17:23,386 views User 1: Image 99999 not found
+ERROR 2026-06-25 20:17:25,472 views User 1: Face detection request missing image_id
+INFO 2026-06-25 20:17:27,555 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:17:27,556 views User 1: Detection failed - Multiple faces (2)
+INFO 2026-06-25 20:17:29,655 views User 1: Initiating face detection on image 1
+WARNING 2026-06-25 20:17:29,656 views User 1: Detection failed - No face detected
+WARNING 2026-06-25 20:17:31,736 views User 1 unauthorized access attempt to image 2
+INFO 2026-06-25 20:17:33,840 views User 1: Initiating face detection on image 1
+INFO 2026-06-25 20:17:33,841 views User 1: Visual debug image created for image 1
+INFO 2026-06-25 20:17:33,841 views User 1: Face analysis successful for image 1
+INFO 2026-06-25 20:17:45,316 views User 1: Visual shape analysis debug image created for image 1
+WARNING 2026-06-25 20:17:47,428 views User 1 unauthorized access attempt to image 2
+ERROR 2026-06-25 20:17:47,430 views User 1: Face shape detection request missing image_id
+INFO 2026-06-25 20:19:00,433 views User 1: Visual shape analysis debug image created for image 3
+INFO 2026-06-25 20:20:00,208 views User 1: Visual shape analysis debug image created for image 5
