@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Upload, Image as ImageIcon, Sparkles, Menu, X, User } from 'lucide-react';
+import { LogOut, Upload, Image as ImageIcon, Sparkles, Menu, X, User, Heart } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -58,6 +58,66 @@ const Navbar = () => {
             >
               <ImageIcon className="w-4 h-4" />
               Gallery
+            </Link>
+
+            <Link
+              to="/recommendations"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive('/recommendations') || location.pathname.startsWith('/recommendations')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              Style Advice
+            </Link>
+
+            <Link
+              to="/beauty-recommendations"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive('/beauty-recommendations') || location.pathname.startsWith('/beauty-recommendations')
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              Skincare Recs
+            </Link>
+
+            <Link
+              to="/virtual-tryon"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive('/virtual-tryon')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              Virtual Try-On
+            </Link>
+
+            <Link
+              to="/live-detection"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive('/live-detection')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-violet-400" />
+              Live Mesh
+            </Link>
+
+            <Link
+              to="/tryon-history"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive('/tryon-history')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Heart className="w-4 h-4 text-rose-500 fill-rose-500/10" />
+              Try-On History
             </Link>
           </div>
 
@@ -119,6 +179,71 @@ const Navbar = () => {
             >
               <ImageIcon className="w-5 h-5" />
               Gallery
+            </Link>
+
+            <Link
+              to="/recommendations"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                isActive('/recommendations') || location.pathname.startsWith('/recommendations')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Sparkles className="w-5 h-5" />
+              Style Advice
+            </Link>
+
+            <Link
+              to="/beauty-recommendations"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                isActive('/beauty-recommendations') || location.pathname.startsWith('/beauty-recommendations')
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Sparkles className="w-5 h-5 text-emerald-400" />
+              Skincare Recs
+            </Link>
+
+            <Link
+              to="/virtual-tryon"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                isActive('/virtual-tryon')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Sparkles className="w-5 h-5 text-indigo-400" />
+              Virtual Try-On
+            </Link>
+
+            <Link
+              to="/live-detection"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                isActive('/live-detection')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Sparkles className="w-5 h-5 text-violet-400" />
+              Live Mesh
+            </Link>
+
+            <Link
+              to="/tryon-history"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                isActive('/tryon-history')
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              <Heart className="w-5 h-5 text-rose-500 fill-rose-500/10" />
+              Try-On History
             </Link>
             
             <div className="border-t border-slate-800/80 my-2 pt-2 px-4 flex items-center justify-between">

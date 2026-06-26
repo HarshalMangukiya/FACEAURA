@@ -15,7 +15,14 @@ def extract_landmarks(image_path):
     # Ensure local model exists
     models = ensure_models_exist()
     
-    mp_image = mp.Image.create_from_file(image_path)
+    # Load image using OpenCV to prevent path or file format reading issues on Windows
+    cv_img = cv2.imread(image_path)
+    if cv_img is None:
+        raise ValueError("Corrupted image or unsupported image format")
+
+    # MediaPipe expects RGB format, OpenCV loads BGR
+    rgb_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_img)
     
     base_options = python.BaseOptions(model_asset_path=models["landmarker"])
     # We specify num_faces=1 since we enforce exactly one face

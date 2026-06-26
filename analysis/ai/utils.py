@@ -46,7 +46,8 @@ def draw_face_landmarks(image_path, landmarks, image_id):
     
     # 1. Draw bounding box from MediaPipe Tasks FaceDetector
     models = ensure_models_exist()
-    mp_image = mp.Image.create_from_file(image_path)
+    rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_img)
     base_options = python.BaseOptions(model_asset_path=models["detector"])
     options = vision.FaceDetectorOptions(base_options=base_options)
     
@@ -182,4 +183,59 @@ def draw_shape_analysis(image_path, landmarks, measurements, face_shape, confide
     
     # Return relative URL path (e.g. /media/debug/shape_analysis_1.jpg)
     return f"{settings.MEDIA_URL}debug/{output_filename}"
+
+
+def draw_skin_analysis(image_path, landmarks, acne_spots, tone_rois, dark_circle_rois, image_id):
+    """
+    Draws skin analysis ROIs and detected acne spots on the image,
+    saving the output to media/debug/skin_analysis_{image_id}.jpg.
+    
+    Returns:
+        str: Relative URL path to the skin analysis debug image.
+    """
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError("Corrupted image or unsupported image format")
+        
+    h, w, _ = image.shape
+    
+    # 1. Draw Acne spots (red circles)
+    for spot in acne_spots:
+        cx, cy = spot["center"]
+        radius = spot["radius"]
+        cv2.circle(image, (cx, cy), radius + 4, (0, 0, 255), 2, cv2.LINE_AA) # BGR Red
+        cv2.circle(image, (cx, cy), 2, (0, 0, 255), -1, cv2.LINE_AA)
+        
+    # 2. Draw Forehead and Cheek ROIs for Skin Tone/Type
+    # tone_rois: [forehead_roi, left_cheek_roi, right_cheek_roi]
+    colors = [(235, 160, 50), (75, 220, 75), (75, 220, 75)] # Forehead (Cyan), Cheeks (Green)
+    labels = ["Forehead ROI", "L Cheek ROI", "R Cheek ROI"]
+    for bounds, color, label in zip(tone_rois, colors, labels):
+        if bounds:
+            xmin, ymin, xmax, ymax = bounds
+            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color, 2, cv2.LINE_AA)
+            cv2.putText(image, label, (xmin, max(12, ymin - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA)
+            
+    # 3. Draw Under-Eye ROIs for Dark Circles
+    # dark_circle_rois: [l_eye_roi, r_eye_roi, l_chk_roi, r_chk_roi]
+    eye_colors = [(180, 80, 200), (180, 80, 200)] # Purple
+    eye_labels = ["L Under-Eye", "R Under-Eye"]
+    for bounds, color, label in zip(dark_circle_rois[:2], eye_colors, eye_labels):
+        if bounds:
+            xmin, ymin, xmax, ymax = bounds
+            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), color, 2, cv2.LINE_AA)
+            cv2.putText(image, label, (xmin, max(12, ymin - 5)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA)
+            
+    # Save the output to media/debug/
+    debug_dir = os.path.join(settings.MEDIA_ROOT, 'debug')
+    os.makedirs(debug_dir, exist_ok=True)
+    
+    output_filename = f"skin_analysis_{image_id}.jpg"
+    output_path = os.path.join(debug_dir, output_filename)
+    
+    cv2.imwrite(output_path, image)
+    
+    # Return relative URL path
+    return f"{settings.MEDIA_URL}debug/{output_filename}"
+
 

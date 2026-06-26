@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getImages, deleteImage } from '../services/analysisService';
-import { Trash2, Calendar, ShieldCheck, HelpCircle, Eye, AlertCircle, RefreshCw, Plus, X } from 'lucide-react';
+import { Trash2, Calendar, ShieldCheck, HelpCircle, Eye, AlertCircle, RefreshCw, Plus, X, Sparkles } from 'lucide-react';
+
 
 const GalleryPage = () => {
   const [images, setImages] = useState([]);
@@ -206,11 +207,43 @@ const GalleryPage = () => {
                   <span className="text-xs text-slate-500 font-semibold tracking-wide">ID: #{item.id}</span>
                 </div>
                 
+                {/* Analyze/Report Actions */}
+                <div className="mt-1">
+                  {item.status.toLowerCase() === 'uploaded' && (
+                    <Link
+                      to={`/analysis/${item.id}`}
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl active:scale-[0.98] transition-all shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                      Analyze Selfie
+                    </Link>
+                  )}
+                  {item.status.toLowerCase() === 'completed' && (
+                    <Link
+                      to={`/analysis/${item.id}`}
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-900 border border-slate-800 hover:bg-slate-850 hover:border-slate-700 text-slate-200 hover:text-white text-xs font-semibold rounded-xl active:scale-[0.98] transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5 animate-pulse" />
+                      View Biometrics
+                    </Link>
+                  )}
+                  {item.status.toLowerCase() === 'failed' && (
+                    <Link
+                      to={`/analysis/${item.id}`}
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold rounded-xl active:scale-[0.98] transition-all"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      View Failure Info
+                    </Link>
+                  )}
+                </div>
+                
                 <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1 border-t border-slate-800/40 pt-2.5 w-full">
                   <Calendar className="w-3.5 h-3.5 text-indigo-400/80" />
                   <span>{formatDate(item.uploaded_at)}</span>
                 </div>
               </div>
+
             </div>
           ))}
         </div>
