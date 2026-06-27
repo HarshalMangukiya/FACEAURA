@@ -34,37 +34,37 @@ def apply_hair_color(hair_rgba, color_name):
     elif color_lower == 'golden':
         h = np.full_like(h, 23)
         s = np.full_like(s, 190)
-        v = np.clip(v * 1.15, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.5 + 90, 0, 255).astype(np.uint8)
     elif color_lower == 'blonde':
         h = np.full_like(h, 25)
         s = np.full_like(s, 110)
-        v = np.clip(v * 1.25, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.5 + 100, 0, 255).astype(np.uint8)
     elif color_lower == 'ash blonde':
         h = np.full_like(h, 25)
         s = np.full_like(s, 60)
-        v = np.clip(v * 1.2, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.4 + 80, 0, 255).astype(np.uint8)
     elif color_lower == 'grey':
         s = (s * 0.05).astype(np.uint8)
-        v = (v * 0.75).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.2 + 60, 0, 255).astype(np.uint8)
     elif color_lower == 'silver':
         s = (s * 0.02).astype(np.uint8)
-        v = np.clip(v * 1.3, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.5 + 110, 0, 255).astype(np.uint8)
     elif color_lower == 'red':
         h = np.full_like(h, 0)
         s = np.full_like(s, 200)
-        v = np.clip(v * 1.0, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.3 + 50, 0, 255).astype(np.uint8)
     elif color_lower == 'blue':
         h = np.full_like(h, 115)
         s = np.full_like(s, 180)
-        v = np.clip(v * 0.95, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.2 + 40, 0, 255).astype(np.uint8)
     elif color_lower == 'purple':
         h = np.full_like(h, 145)
         s = np.full_like(s, 170)
-        v = np.clip(v * 0.95, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.2 + 40, 0, 255).astype(np.uint8)
     elif color_lower == 'pink':
         h = np.full_like(h, 170)
         s = np.full_like(s, 120)
-        v = np.clip(v * 1.1, 0, 255).astype(np.uint8)
+        v = np.clip(v.astype(float) * 1.4 + 60, 0, 255).astype(np.uint8)
     else:
         # Unknown color, return original
         return hair_rgba.copy()

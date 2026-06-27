@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { getImages, getAnalysisResult, detectFace, detectFaceShape, uploadImage } from '../services/analysisService';
 import {
@@ -66,9 +66,8 @@ const FloatingHUDToolbar = React.memo(({
         type="button"
         onClick={setIsMirrored}
         title="Mirror Viewport"
-        className={`p-2 rounded-xl transition-colors hover:bg-slate-900 ${
-          isMirrored ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
-        }`}
+        className={`p-2 rounded-xl transition-colors hover:bg-slate-900 ${isMirrored ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+          }`}
       >
         <RefreshCw className="w-4 h-4" />
       </button>
@@ -158,10 +157,17 @@ const TuningSliders = React.memo(({
 const ColorSelector = React.memo(({
   selectedColor,
   setSelectedColor,
-  colors
+  colors,
+  selectedHairstyleId
 }) => {
   return (
     <div className="space-y-4">
+      {!selectedHairstyleId && (
+        <div className="p-3 bg-amber-950/20 border border-amber-900/30 rounded-2xl text-xs text-amber-300 leading-relaxed flex gap-2">
+          <Info className="w-4 h-4 text-amber-400 flex-shrink-0 animate-pulse" />
+          <span>Note: Color changes apply to hairstyle overlays. Select a style in the <strong>Hairstyles</strong> tab to view the color effect on your photo.</span>
+        </div>
+      )}
       <div className="p-3 bg-slate-950/40 border border-slate-850 rounded-2xl text-xs text-slate-400 leading-relaxed flex gap-2">
         <Info className="w-4 h-4 text-indigo-400 flex-shrink-0" />
         <span>Preserves the highlights, midtones, and shadows of the hair overlay asset using advanced HSV masking.</span>
@@ -172,11 +178,10 @@ const ColorSelector = React.memo(({
           <div
             key={color.name}
             onClick={() => setSelectedColor(color.name)}
-            className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center justify-center text-center ${
-              selectedColor === color.name
+            className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center justify-center text-center ${selectedColor === color.name
                 ? 'bg-indigo-650/10 border-indigo-500 shadow-lg'
                 : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-            }`}
+              }`}
           >
             <div className={`w-8 h-8 rounded-full ${color.class} mb-2 shadow-inner`}></div>
             <div className="text-xxs font-bold text-white">{color.name}</div>
@@ -217,11 +222,10 @@ const AssetSelectorGrid = React.memo(({
                 key={shape}
                 type="button"
                 onClick={() => setFaceShapeFilter(shape)}
-                className={`text-xxs px-2.5 py-1 rounded-lg border font-semibold transition-all ${
-                  faceShapeFilter.toLowerCase() === shape.toLowerCase()
+                className={`text-xxs px-2.5 py-1 rounded-lg border font-semibold transition-all ${faceShapeFilter.toLowerCase() === shape.toLowerCase()
                     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                     : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {shape}
                 {shape.toLowerCase() === (faceShape || '').toLowerCase() && ' (Recommended)'}
@@ -233,11 +237,10 @@ const AssetSelectorGrid = React.memo(({
             {/* None Option */}
             <div
               onClick={() => setSelectedHairstyleId('')}
-              className={`cursor-pointer rounded-2xl p-3 border transition-all flex flex-col items-center justify-center min-h-[90px] ${
-                selectedHairstyleId === ''
+              className={`cursor-pointer rounded-2xl p-3 border transition-all flex flex-col items-center justify-center min-h-[90px] ${selectedHairstyleId === ''
                   ? 'bg-indigo-650/10 border-indigo-500 shadow-lg'
                   : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-              }`}
+                }`}
             >
               <EyeOff className="w-5 h-5 text-slate-500 mb-1" />
               <div className="text-xs font-semibold text-slate-450">None / Original</div>
@@ -247,11 +250,10 @@ const AssetSelectorGrid = React.memo(({
               <div
                 key={hs.id}
                 onClick={() => setSelectedHairstyleId(hs.id)}
-                className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center relative overflow-hidden group ${
-                  selectedHairstyleId === hs.id
+                className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center relative overflow-hidden group ${selectedHairstyleId === hs.id
                     ? 'bg-indigo-650/10 border-indigo-500 shadow-lg shadow-indigo-950/40'
                     : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-                }`}
+                  }`}
               >
                 {/* Recommendation badge */}
                 {faceShape && hs.face_shape.toLowerCase() === faceShape.toLowerCase() && (
@@ -281,11 +283,10 @@ const AssetSelectorGrid = React.memo(({
         <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
           <div
             onClick={() => setSelectedBeardId('')}
-            className={`cursor-pointer rounded-2xl p-3 border transition-all flex flex-col items-center justify-center min-h-[90px] ${
-              selectedBeardId === ''
+            className={`cursor-pointer rounded-2xl p-3 border transition-all flex flex-col items-center justify-center min-h-[90px] ${selectedBeardId === ''
                 ? 'bg-indigo-650/10 border-indigo-500 shadow-lg'
                 : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-            }`}
+              }`}
           >
             <EyeOff className="w-5 h-5 text-slate-500 mb-1" />
             <div className="text-xs font-semibold text-slate-450">None / Original</div>
@@ -295,11 +296,10 @@ const AssetSelectorGrid = React.memo(({
             <div
               key={b.id}
               onClick={() => setSelectedBeardId(b.id)}
-              className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center group ${
-                selectedBeardId === b.id
+              className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center group ${selectedBeardId === b.id
                   ? 'bg-indigo-650/10 border-indigo-500 shadow-lg'
                   : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-              }`}
+                }`}
             >
               <div className="w-16 h-16 rounded-xl bg-slate-900/60 border border-slate-800 overflow-hidden mb-2">
                 <img
@@ -319,11 +319,10 @@ const AssetSelectorGrid = React.memo(({
         <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
           <div
             onClick={() => setSelectedGlassesId('')}
-            className={`cursor-pointer rounded-2xl p-3 border transition-all flex flex-col items-center justify-center min-h-[90px] ${
-              selectedGlassesId === ''
+            className={`cursor-pointer rounded-2xl p-3 border transition-all flex flex-col items-center justify-center min-h-[90px] ${selectedGlassesId === ''
                 ? 'bg-indigo-650/10 border-indigo-500 shadow-lg'
                 : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-            }`}
+              }`}
           >
             <EyeOff className="w-5 h-5 text-slate-500 mb-1" />
             <div className="text-xs font-semibold text-slate-450">None / Original</div>
@@ -333,11 +332,10 @@ const AssetSelectorGrid = React.memo(({
             <div
               key={g.id}
               onClick={() => setSelectedGlassesId(g.id)}
-              className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center group ${
-                selectedGlassesId === g.id
+              className={`cursor-pointer rounded-2xl p-2 border transition-all flex flex-col items-center group ${selectedGlassesId === g.id
                   ? 'bg-indigo-650/10 border-indigo-500 shadow-lg'
                   : 'bg-slate-950/20 border-slate-850/60 hover:border-slate-800'
-              }`}
+                }`}
             >
               <div className="w-16 h-12 rounded-xl bg-slate-900/60 border border-slate-800 overflow-hidden mb-2">
                 <img
@@ -367,7 +365,7 @@ const BookmarksSection = React.memo(({
         <Heart className="w-5 h-5 text-emerald-400 fill-emerald-400/20" />
         Saved Looks / Bookmarks
       </h2>
-      
+
       {history.length === 0 ? (
         <div className="text-center py-10 border border-dashed border-slate-800 rounded-2xl bg-slate-950/10">
           <Bookmark className="w-10 h-10 text-slate-700 mx-auto mb-2" />
@@ -455,7 +453,7 @@ const VirtualTryOn = () => {
   const [savingBookmark, setSavingBookmark] = useState(false);
   const [error, setError] = useState('');
   const [currentResult, setCurrentResult] = useState(null); // TryOnHistory object representing current render
-  
+
   // Live Try-On Mode integrations
   const [tryOnMode, setTryOnMode] = useState('static'); // 'static' | 'live'
   const [videoElement, setVideoElement] = useState(null);
@@ -502,7 +500,17 @@ const VirtualTryOn = () => {
 
   const handleSelectColor = useCallback((name) => {
     setSelectedColor(name);
-  }, []);
+    if (name !== 'Original' && !selectedHairstyleId && hairstyles.length > 0) {
+      const recommended = hairstyles.find(
+        hs => faceShape && hs.face_shape.toLowerCase() === faceShape.toLowerCase()
+      );
+      if (recommended) {
+        setSelectedHairstyleId(recommended.id.toString());
+      } else {
+        setSelectedHairstyleId(hairstyles[0].id.toString());
+      }
+    }
+  }, [selectedHairstyleId, hairstyles, faceShape]);
 
   const handleSelectTab = useCallback((tab) => {
     setActiveTab(tab);
@@ -518,7 +526,7 @@ const VirtualTryOn = () => {
       console.log('[VirtualTryOn] Setting up Live Tracker and CanvasRenderer...');
       const tracker = new FaceTracker({ alpha: 0.45 });
       const renderer = new CanvasRenderer(canvasRef.current, videoElement);
-      
+
       faceTrackerRef.current = tracker;
       canvasRendererRef.current = renderer;
 
@@ -534,7 +542,7 @@ const VirtualTryOn = () => {
             renderer.setAsset('beard', bd ? getFullAssetUrl(bd.image) : null),
             renderer.setAsset('glasses', gl ? getFullAssetUrl(gl.image) : null)
           ]);
-          
+
           renderer.setOptions({
             hairColor: selectedColor,
             showMesh: showMesh,
@@ -548,7 +556,7 @@ const VirtualTryOn = () => {
           await tracker.start(videoElement, (telemetry) => {
             renderer.updateTelemetry(telemetry);
           });
-          
+
           renderer.start();
         } catch (err) {
           console.error('[VirtualTryOn] Error starting live tracking:', err);
@@ -643,7 +651,7 @@ const VirtualTryOn = () => {
       });
 
       setCurrentResult(response);
-      
+
       // Refresh bookmarks list
       const historyData = await getTryOnHistory();
       setHistory(historyData);
@@ -706,14 +714,14 @@ const VirtualTryOn = () => {
   useEffect(() => {
     if (location.state?.restoreLook) {
       const look = location.state.restoreLook;
-      
+
       isRestoringRef.current = true;
-      
+
       setSelectedSelfieId(look.original_image);
       setSelectedHairstyleId(look.selected_hairstyle || '');
       setSelectedBeardId(look.selected_beard || '');
       setSelectedGlassesId(look.selected_glasses || '');
-      
+
       const matchedColor = colors.find(c => c.name.toLowerCase() === (look.selected_color || '').toLowerCase());
       setSelectedColor(matchedColor ? matchedColor.name : 'Original');
 
@@ -765,7 +773,7 @@ const VirtualTryOn = () => {
         await detectFace(selectedSelfieId);
         // Automatically run face shape detection
         await detectFaceShape(selectedSelfieId);
-        
+
         // Retrieve newly generated analysis
         const newAnalysis = await getAnalysisResult(selectedSelfieId);
         if (newAnalysis && newAnalysis.landmarks) {
@@ -902,7 +910,7 @@ const VirtualTryOn = () => {
     setSelectedHairstyleId(look.selected_hairstyle || '');
     setSelectedBeardId(look.selected_beard || '');
     setSelectedGlassesId(look.selected_glasses || '');
-    
+
     // Find matching color
     const matchedColor = colors.find(c => c.name.toLowerCase() === (look.selected_color || '').toLowerCase());
     setSelectedColor(matchedColor ? matchedColor.name : 'Original');
@@ -930,7 +938,7 @@ const VirtualTryOn = () => {
   // Download look
   const handleDownload = useCallback(() => {
     if (!currentResult || !currentResult.generated_image_url) return;
-    
+
     const imageUrl = currentResult.generated_image_url;
     const link = document.createElement('a');
     link.href = imageUrl;
@@ -968,7 +976,7 @@ const VirtualTryOn = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 text-slate-200">
-      
+
       {/* Title Header with Glowing Background */}
       <div className="relative mb-8 text-center sm:text-left">
         <div className="absolute -top-10 left-1/3 w-72 h-72 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -980,22 +988,20 @@ const VirtualTryOn = () => {
             <button
               type="button"
               onClick={() => setTryOnMode('static')}
-              className={`px-4 py-2 rounded-xl transition-all ${
-                tryOnMode === 'static'
+              className={`px-4 py-2 rounded-xl transition-all ${tryOnMode === 'static'
                   ? 'bg-indigo-650 text-white shadow-lg'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               Static Image
             </button>
             <button
               type="button"
               onClick={() => setTryOnMode('live')}
-              className={`px-4 py-2 rounded-xl transition-all ${
-                tryOnMode === 'live'
+              className={`px-4 py-2 rounded-xl transition-all ${tryOnMode === 'live'
                   ? 'bg-indigo-650 text-white shadow-lg'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               Live Camera
             </button>
@@ -1015,11 +1021,11 @@ const VirtualTryOn = () => {
 
       {/* Main Grid: Left Preview, Right Panel Configurator */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10">
-        
+
         {/* Left Column: Image Canvas & Comparison Slider */}
         <div className="lg:col-span-7 space-y-5">
           <div className="glass-panel rounded-3xl p-4 sm:p-6 border border-slate-850/80 bg-slate-950/30 relative flex flex-col items-center select-none shadow-2xl">
-            
+
             {/* Ambient indicator lights */}
             <div className="absolute top-4 left-4 flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
@@ -1051,7 +1057,7 @@ const VirtualTryOn = () => {
             )}
 
             {/* Canvas Area */}
-            <div 
+            <div
               ref={tryOnMode === 'static' ? sliderRef : null}
               onMouseMove={tryOnMode === 'static' ? handleMouseMove : null}
               onTouchMove={tryOnMode === 'static' ? handleTouchMove : null}
@@ -1059,20 +1065,19 @@ const VirtualTryOn = () => {
               onMouseUp={tryOnMode === 'static' ? () => setIsSliding(false) : null}
               onMouseLeave={tryOnMode === 'static' ? () => setIsSliding(false) : null}
               className={
-                isFullscreen 
+                isFullscreen
                   ? "fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 md:p-12 animate-fade-in"
-                  : `w-full aspect-[3/4] max-h-[500px] overflow-hidden rounded-2xl border border-slate-850 bg-slate-950 flex items-center justify-center relative select-none ${
-                      tryOnMode === 'static' ? 'cursor-ew-resize' : 'mt-10'
-                    }`
+                  : `w-full aspect-[3/4] max-h-[500px] overflow-hidden rounded-2xl border border-slate-850 bg-slate-950 flex items-center justify-center relative select-none ${tryOnMode === 'static' ? 'cursor-ew-resize' : 'mt-10'
+                  }`
               }
             >
               {tryOnMode === 'live' ? (
                 <div className={isFullscreen ? "w-full max-w-md aspect-[3/4] relative rounded-3xl border border-slate-850 overflow-hidden shadow-2xl" : "w-full h-full relative"}>
-                  <canvas 
-                    ref={canvasRef} 
+                  <canvas
+                    ref={canvasRef}
                     className="w-full h-full object-cover"
                   />
-                  
+
                   {/* Floating HUD Toolbar Overlay */}
                   <FloatingHUDToolbar
                     isMirrored={isMirrored}
@@ -1084,9 +1089,9 @@ const VirtualTryOn = () => {
                   />
 
                   <div style={{ display: 'none' }}>
-                    <Camera 
-                      autoStart={true} 
-                      onVideoReady={(el) => setVideoElement(el)} 
+                    <Camera
+                      autoStart={true}
+                      onVideoReady={(el) => setVideoElement(el)}
                     />
                   </div>
                 </div>
@@ -1102,7 +1107,7 @@ const VirtualTryOn = () => {
                     />
 
                     {/* Foreground: TryOn Composite, clipped based on slider position */}
-                    <div 
+                    <div
                       className="absolute inset-0 w-full h-full pointer-events-none"
                       style={{
                         clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`
@@ -1116,7 +1121,7 @@ const VirtualTryOn = () => {
                     </div>
 
                     {/* Slider boundary divider line & central handle */}
-                    <div 
+                    <div
                       className="absolute top-0 bottom-0 w-1 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)] pointer-events-none"
                       style={{ left: `${sliderPos}%` }}
                     >
@@ -1203,11 +1208,10 @@ const VirtualTryOn = () => {
                 <>
                   <button
                     onClick={() => setShowMesh(!showMesh)}
-                    className={`py-3 px-4 border font-semibold rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
-                      showMesh 
-                        ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' 
+                    className={`py-3 px-4 border font-semibold rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${showMesh
+                        ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400'
                         : 'bg-slate-900 border-slate-800 hover:bg-slate-850 text-slate-350'
-                    }`}
+                      }`}
                   >
                     {showMesh ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     {showMesh ? 'Hide Face Mesh' : 'Show Face Mesh'}
@@ -1281,11 +1285,10 @@ const VirtualTryOn = () => {
             <div className="flex bg-slate-950/80 p-1 rounded-2xl mb-6 border border-slate-850">
               <button
                 onClick={() => setActiveTab('hairstyles')}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${
-                  activeTab === 'hairstyles'
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${activeTab === 'hairstyles'
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Scissors className="w-4 h-4" />
                 Hairstyles
@@ -1293,11 +1296,10 @@ const VirtualTryOn = () => {
 
               <button
                 onClick={() => setActiveTab('beards')}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${
-                  activeTab === 'beards'
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${activeTab === 'beards'
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <User className="w-4 h-4" />
                 Beards
@@ -1305,11 +1307,10 @@ const VirtualTryOn = () => {
 
               <button
                 onClick={() => setActiveTab('glasses')}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${
-                  activeTab === 'glasses'
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${activeTab === 'glasses'
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Glasses className="w-4 h-4" />
                 Glasses
@@ -1317,11 +1318,10 @@ const VirtualTryOn = () => {
 
               <button
                 onClick={() => setActiveTab('colors')}
-                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${
-                  activeTab === 'colors'
+                className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex flex-col items-center gap-1 ${activeTab === 'colors'
                     ? 'bg-indigo-600 text-white shadow-md'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Sparkles className="w-4 h-4" />
                 Colors
@@ -1351,6 +1351,7 @@ const VirtualTryOn = () => {
                   selectedColor={selectedColor}
                   setSelectedColor={handleSelectColor}
                   colors={colors}
+                  selectedHairstyleId={selectedHairstyleId}
                 />
               )}
             </div>
