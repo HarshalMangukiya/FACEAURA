@@ -5,6 +5,7 @@
     "lib": ["DOM", "DOM.Iterable", "ES2020", "WebWorker"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": ["vite/client"],
 
     /* Mixed JS/TS project support */
     "allowJs": true,

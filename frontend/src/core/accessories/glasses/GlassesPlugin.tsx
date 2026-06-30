@@ -1,164 +1,155 @@
-/**
- * GlassesPlugin.tsx
- *
- * Handles loading, caching, and rendering 3D Eyewear models (GLTF/GLB).
- * Automatically configures PBR materials (refraction, reflection, transparency) for lenses.
- * Aligns frame positioning to the nose bridge and ear templates.
- */
-
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { IAccessoryPlugin } from '../IAccessoryPlugin';
 
-export class GlassesPlugin {
-  private loader: GLTFLoader;
-  private currentModel: THREE.Group | null = null;
-  private modelCache = new Map<string, THREE.Group>();
+export class GlassesPlugin implements IAccessoryPlugin {
   private headGroup: THREE.Group;
-  private envMap: THREE.Texture | null = null;
+  private currentModel: THREE.Group | null = null;
+  private loadedModel: THREE.Group | null = null;
+  public currentAssetUrl: string | null = null;
 
-  // Options
+  // Configuration options
   private scale: number = 1.0;
   private offsetY: number = 0.05;
   private offsetZ: number = 0.15;
+  private visible: boolean = true;
 
-  constructor(headGroup: THREE.Group, envMap: THREE.Texture | null) {
+  // Animation / Transition variables
+  private animationState: 'idle' | 'fade-in' | 'fade-out' = 'idle';
+  private animationTime: number = 0;
+  private readonly transitionDuration: number = 0.2; // 200ms
+
+  constructor(headGroup: THREE.Group) {
     this.headGroup = headGroup;
-    this.envMap = envMap;
-    this.loader = new GLTFLoader();
   }
 
   /**
-   * Loads eyewear model and attaches it to the head group.
-   *
-   * @param modelUrl URL of eyewear GLTF/GLB asset
+   * Attaches the loaded glasses model to the plugin.
    */
-  public async loadGlasses(modelUrl: string): Promise<THREE.Group | null> {
-    this.clear();
+  public attach(model: THREE.Group | null): void {
+    this.clearCurrentModel();
 
-    if (this.modelCache.has(modelUrl)) {
-      const cached = this.modelCache.get(modelUrl)!.clone();
-      this.attachToHead(cached);
-      return cached;
-    }
+    if (!model) return;
 
-    return new Promise((resolve) => {
-      this.loader.load(
-        modelUrl,
-        (gltf) => {
-          const model = gltf.scene;
-          
-          // Configure glass lenses with refraction, PBR reflections
-          this.applyLensMaterials(model);
-          
-          // Cache model
-          this.modelCache.set(modelUrl, model);
-          
-          const cloned = model.clone();
-          this.attachToHead(cloned);
-          resolve(cloned);
-        },
-        undefined,
-        (err) => {
-          console.error('[GlassesPlugin] Failed to load 3D glasses model:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-
-  /**
-   * Applies custom PBR materials to meshes designated as lenses.
-   */
-  private applyLensMaterials(model: THREE.Group) {
-    model.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-
-        // Detect glass lenses by name or material properties
-        const name = child.name.toLowerCase();
-        if (name.includes('lens') || name.includes('glass')) {
-          child.material = new THREE.MeshPhysicalMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.25,
-            metalness: 0.1,
-            roughness: 0.05,
-            transmission: 0.9, // Refraction transparency
-            thickness: 0.5, // Refraction thickness
-            ior: 1.52, // Refractive index of standard glass
-            envMap: this.envMap,
-            envMapIntensity: 1.5,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.05
-          });
-        } else {
-          // Standard plastic/metal frames PBR
-          const mat = child.material as THREE.MeshStandardMaterial;
-          if (mat) {
-            mat.envMap = this.envMap;
-            mat.envMapIntensity = 1.0;
-            mat.roughness = Math.max(mat.roughness, 0.15);
-          }
-        }
-      }
-    });
-  }
-
-  /**
-   * Attaches the loaded glasses model to the head group and centers it.
-   */
-  private attachToHead(model: THREE.Group) {
+    this.loadedModel = model;
     this.currentModel = model;
+    this.headGroup.add(this.currentModel);
 
-    // Standard scaling: fit glasses to typical head width
-    // Model coordinates center usually corresponds to nose bridge
-    model.position.set(0, this.offsetY * 10, this.offsetZ * 10);
-    model.scale.setScalar(this.scale * 10.5);
+    // Initialize animation properties
+    this.animationState = 'fade-in';
+    this.animationTime = 0;
 
-    this.headGroup.add(model);
+    this.currentModel.scale.set(0, 0, 0);
+    this.setOpacity(0);
   }
 
   /**
-   * Updates glasses positioning based on landmarks coordinates dynamically (if needed for fine adjustments)
+   * Updates glasses positioning and size based on resolved anchors.
    */
-  public updatePose(landmarks: any[]) {
-    if (!this.currentModel || !landmarks || landmarks.length < 356) return;
+  public update(frame: { anchors: any; blendshapes?: any[]; dt: number; width: number; height: number }): void {
+    let animScale = 1.0;
+    let animOpacity = 1.0;
 
-    // Nose bridge landmark: 6, Left temple: 127, Right temple: 356
-    const leftTemple = landmarks[127];
-    const rightTemple = landmarks[356];
-    
-    // Adjust scale based on temple width distance
-    const templeDist = Math.hypot(rightTemple.x - leftTemple.x, rightTemple.y - leftTemple.y, rightTemple.z - leftTemple.z);
-    
-    // Scale factor: typical temple-to-temple width is 0.18 units in face coordinate systems
-    const localScale = (templeDist / 0.18) * this.scale * 10.5;
-    this.currentModel.scale.setScalar(localScale);
-  }
+    // 1. Process fade transitions
+    if (this.animationState === 'fade-in') {
+      this.animationTime += frame.dt;
+      const progress = Math.min(this.animationTime / this.transitionDuration, 1.0);
+      animScale = progress;
+      animOpacity = progress;
+      if (progress >= 1.0) {
+        this.animationState = 'idle';
+      }
+    } else if (this.animationState === 'fade-out') {
+      this.animationTime += frame.dt;
+      const progress = Math.min(this.animationTime / this.transitionDuration, 1.0);
+      animScale = 1.0 - progress;
+      animOpacity = 1.0 - progress;
+      if (progress >= 1.0) {
+        this.clearCurrentModel();
+        return;
+      }
+    } else if (!this.currentModel) {
+      return;
+    }
 
-  /**
-   * Adjusts offsets dynamically via sliders
-   */
-  public setOffsets(scale: number, offsetY: number, offsetZ: number) {
-    this.scale = scale;
-    this.offsetY = offsetY;
-    this.offsetZ = offsetZ;
+    // 2. Perform anchor-locked positioning and scaling
+    if (this.currentModel && frame.anchors) {
+      const anchor = frame.anchors.getNoseBridgeAnchor();
+      if (anchor && anchor.confidence > 0.5) {
+        this.currentModel.visible = this.visible;
 
-    if (this.currentModel) {
-      this.currentModel.position.set(0, offsetY * 10, offsetZ * 10);
-      this.currentModel.scale.setScalar(scale * 10.5);
+        // Position: aligned on NoseBridgeAnchor + slider offsets (scale offsets by 10 for 3D coordinate space)
+        this.currentModel.position.copy(anchor.position).add(
+          new THREE.Vector3(0, this.offsetY * 10, this.offsetZ * 10)
+        );
+
+        // Rotation: aligned with the head's rotation
+        this.currentModel.quaternion.copy(anchor.rotation);
+
+        // Scale: relative to interpupillary distance (anchor.scaleRef)
+        // Typical IPD is ~0.65. Normalized model width is 1.0. Scale factor 2.3 fits head width perfectly.
+        const sizeScale = anchor.scaleRef * this.scale * 2.3 * animScale;
+        this.currentModel.scale.setScalar(sizeScale);
+
+        // Update material opacities
+        this.setOpacity(animOpacity);
+      } else {
+        this.currentModel.visible = false;
+      }
     }
   }
 
   /**
-   * Clear current eyewear overlay.
+   * Sets scale and offset configurations.
    */
-  public clear() {
+  public setConfig(config: any): void {
+    if (config.scale !== undefined) this.scale = config.scale;
+    if (config.offsetY !== undefined) this.offsetY = config.offsetY;
+    if (config.offsetZ !== undefined) this.offsetZ = config.offsetZ;
+    if (config.visible !== undefined) this.visible = config.visible;
+  }
+
+  /**
+   * Initiates the fade-out transition.
+   */
+  public remove(): void {
+    if (this.currentModel && this.animationState !== 'fade-out') {
+      this.animationState = 'fade-out';
+      this.animationTime = 0;
+    } else if (!this.currentModel) {
+      this.clearCurrentModel();
+    }
+  }
+
+  /**
+   * Cleans up the active model.
+   */
+  public dispose(): void {
+    this.clearCurrentModel();
+  }
+
+  private clearCurrentModel(): void {
     if (this.currentModel) {
       this.headGroup.remove(this.currentModel);
       this.currentModel = null;
     }
+    this.loadedModel = null;
+    this.animationState = 'idle';
+  }
+
+  private setOpacity(opacity: number): void {
+    if (!this.currentModel) return;
+    this.currentModel.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const mat = child.material as THREE.Material;
+        if (mat) {
+          mat.transparent = true;
+          const name = child.name.toLowerCase();
+          const targetOpacity = (name.includes('lens') || name.includes('glass')) ? 0.25 : 1.0;
+          mat.opacity = targetOpacity * opacity;
+        }
+      }
+    });
   }
 }
+
 export default GlassesPlugin;

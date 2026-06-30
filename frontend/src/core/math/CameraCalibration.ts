@@ -70,9 +70,8 @@ export class CameraCalibration {
     camera.aspect = intrinsics.aspect;
     camera.updateProjectionMatrix();
 
-    // Adjust camera position based on focal length in normalized 3D space
-    // Placing the camera at z = fy relative to a screen of height 'height'
-    camera.position.set(0, 0, intrinsics.fy);
+    // Position camera at z = 10 to match the normalized 10 units scale of the face mesh and accessories
+    camera.position.set(0, 0, 10);
     camera.lookAt(0, 0, 0);
   }
 

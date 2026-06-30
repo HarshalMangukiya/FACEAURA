@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { IAccessoryPlugin } from '../IAccessoryPlugin';
 
-export class BeardPlugin implements IAccessoryPlugin {
+export class CapsPlugin implements IAccessoryPlugin {
   private headGroup: THREE.Group;
   private currentModel: THREE.Group | null = null;
   private loadedModel: THREE.Group | null = null;
@@ -9,14 +9,9 @@ export class BeardPlugin implements IAccessoryPlugin {
 
   // Offsets and config
   private scale: number = 1.0;
-  private offsetY: number = -0.15;
-  private offsetZ: number = 0.08;
+  private offsetY: number = 0.22;
+  private offsetZ: number = -0.02;
   private visible: boolean = true;
-  private beardColor: string = 'Original';
-
-  // Biometric adjustments
-  private jawScaleX: number = 1.0;
-  private jawStretchY: number = 1.0;
 
   // Animation / Transition variables
   private animationState: 'idle' | 'fade-in' | 'fade-out' = 'idle';
@@ -42,9 +37,6 @@ export class BeardPlugin implements IAccessoryPlugin {
 
     this.currentModel.scale.set(0, 0, 0);
     this.setOpacity(0);
-
-    // Apply color tinting
-    this.setColor(this.beardColor);
   }
 
   public update(frame: { anchors: any; blendshapes?: any[]; dt: number; width: number; height: number }): void {
@@ -73,39 +65,24 @@ export class BeardPlugin implements IAccessoryPlugin {
       return;
     }
 
-    // 2. Update tracking and jaw stretching expression
+    // 2. Perform anchor-locked positioning and scaling
     if (this.currentModel && frame.anchors) {
-      const anchor = frame.anchors.getChinAnchor();
+      const anchor = frame.anchors.getCapAnchor();
       if (anchor && anchor.confidence > 0.5) {
         this.currentModel.visible = this.visible;
 
-        // Position: anchored at the chin + slider offsets (scale offsets by 10)
+        // Position: anchored at head top + slider offsets (scale offsets by 10)
         this.currentModel.position.copy(anchor.position).add(
           new THREE.Vector3(0, this.offsetY * 10, this.offsetZ * 10)
         );
 
-        // Rotation: aligned with the head rotation
+        // Rotation: aligned with the head's rotation
         this.currentModel.quaternion.copy(anchor.rotation);
 
-        // Scale calculations: width scale (jawWidth = anchor.scaleRef)
-        // Normalized model width is 1.0. Scale factor 1.0 fits chin shape.
-        this.jawScaleX = anchor.scaleRef * this.scale * 1.0 * animScale;
-
-        // Stretch Y-axis dynamically based on jawOpen blendshape score
-        let jawOpenVal = 0;
-        if (frame.blendshapes && frame.blendshapes.length > 0) {
-          const jawOpenShape = frame.blendshapes.find(b => b.categoryName === 'jawOpen' || b.name === 'jawOpen');
-          if (jawOpenShape) {
-            jawOpenVal = jawOpenShape.score;
-          }
-        }
-        this.jawStretchY = 1.0 + (jawOpenVal * 0.20);
-
-        this.currentModel.scale.set(
-          this.jawScaleX,
-          this.scale * 1.0 * this.jawStretchY * animScale,
-          this.scale * 1.0 * animScale
-        );
+        // Scale: relative to face width (anchor.scaleRef)
+        // Normalized model width is 1.0. Scale factor 1.0 fits skull perfectly.
+        const sizeScale = anchor.scaleRef * this.scale * 1.0 * animScale;
+        this.currentModel.scale.setScalar(sizeScale);
 
         // Opacity
         this.setOpacity(animOpacity);
@@ -120,10 +97,6 @@ export class BeardPlugin implements IAccessoryPlugin {
     if (config.offsetY !== undefined) this.offsetY = config.offsetY;
     if (config.offsetZ !== undefined) this.offsetZ = config.offsetZ;
     if (config.visible !== undefined) this.visible = config.visible;
-    if (config.color !== undefined) {
-      this.beardColor = config.color;
-      this.setColor(this.beardColor);
-    }
   }
 
   public remove(): void {
@@ -148,50 +121,6 @@ export class BeardPlugin implements IAccessoryPlugin {
     this.animationState = 'idle';
   }
 
-  private setColor(colorName: string): void {
-    if (!this.currentModel) return;
-
-    let targetColor = new THREE.Color(0x3a2314); // Default Dark Brown
-    let isOriginal = false;
-
-    const colorMap: Record<string, number> = {
-      black: 0x0c0c0c,
-      brown: 0x5c4033,
-      'dark brown': 0x3b2314,
-      golden: 0xb58e24,
-      blonde: 0xe6df9c,
-      'ash blonde': 0xbfaa8a,
-      grey: 0x7a7a7a,
-      silver: 0xcccccc,
-      red: 0x992222,
-      blue: 0x1d4ed8,
-      purple: 0x7e22ce,
-      pink: 0xdb2777
-    };
-
-    const resolved = colorMap[colorName.toLowerCase()];
-    if (resolved !== undefined) {
-      targetColor.setHex(resolved);
-    } else if (colorName.startsWith('#')) {
-      targetColor.set(colorName);
-    } else {
-      isOriginal = true;
-    }
-
-    this.currentModel.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const mat = child.material as THREE.MeshStandardMaterial;
-        if (mat) {
-          if (isOriginal) {
-            mat.color.setHex(0xffffff); // resetting to neutral
-          } else {
-            mat.color.copy(targetColor);
-          }
-        }
-      }
-    });
-  }
-
   private setOpacity(opacity: number): void {
     if (!this.currentModel) return;
     this.currentModel.traverse((child) => {
@@ -206,4 +135,4 @@ export class BeardPlugin implements IAccessoryPlugin {
   }
 }
 
-export default BeardPlugin;
+export default CapsPlugin;

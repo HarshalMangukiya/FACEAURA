@@ -1,124 +1,186 @@
-/**
- * HairPlugin.tsx
- *
- * Manages loading and rendering of 3D Hairstyles (GLTF/GLB).
- * Integrates:
- * - Dynamic recoloring (base color tint, highlights, and gradients).
- * - Spring-mass physics simulation (inertia sways hair with head acceleration).
- * - Head alignment based on hairline anchors.
- */
-
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { IAccessoryPlugin } from '../IAccessoryPlugin';
 
-export class HairPlugin {
-  private loader: GLTFLoader;
-  private currentModel: THREE.Group | null = null;
-  private modelCache = new Map<string, THREE.Group>();
+export class HairPlugin implements IAccessoryPlugin {
   private headGroup: THREE.Group;
-  private envMap: THREE.Texture | null = null;
+  private currentModel: THREE.Group | null = null;
+  private loadedModel: THREE.Group | null = null;
+  public currentAssetUrl: string | null = null;
 
-  // Recoloring Settings
-  private hairColor: string = 'Original';
-  
-  // Spring Physics Variables (to simulate hair sway inertia)
-  private velocity = new THREE.Vector3();
-  private displacement = new THREE.Vector3();
-  private prevHeadPos = new THREE.Vector3();
-  private stiffness: number = 18.0; // Spring stiffness constant
-  private damping: number = 3.5; // Damping ratio
-
-  // Offsets
+  // Offsets and config
   private scale: number = 1.0;
   private offsetY: number = 0.18;
   private offsetZ: number = -0.05;
+  private visible: boolean = true;
+  private hairColor: string = 'Original';
 
-  constructor(headGroup: THREE.Group, envMap: THREE.Texture | null) {
+  // Damped spring-mass variables to simulate hair swaying
+  private velocity = new THREE.Vector3();
+  private displacement = new THREE.Vector3();
+  private prevHeadPos = new THREE.Vector3();
+  private stiffness: number = 18.0; // Spring constant
+  private damping: number = 3.5;     // Damping constant
+
+  // Animation / Transition variables
+  private animationState: 'idle' | 'fade-in' | 'fade-out' = 'idle';
+  private animationTime: number = 0;
+  private readonly transitionDuration: number = 0.2; // 200ms
+
+  constructor(headGroup: THREE.Group) {
     this.headGroup = headGroup;
-    this.envMap = envMap;
-    this.loader = new GLTFLoader();
   }
 
-  /**
-   * Loads hair model and attaches it to the head.
-   */
-  public async loadHair(modelUrl: string): Promise<THREE.Group | null> {
-    this.clear();
+  public attach(model: THREE.Group | null): void {
+    this.clearCurrentModel();
 
-    if (this.modelCache.has(modelUrl)) {
-      const cached = this.modelCache.get(modelUrl)!.clone();
-      this.attachToHead(cached);
-      return cached;
-    }
+    if (!model) return;
 
-    return new Promise((resolve) => {
-      this.loader.load(
-        modelUrl,
-        (gltf) => {
-          const model = gltf.scene;
-          
-          this.applyHairMaterials(model);
-          this.modelCache.set(modelUrl, model);
-          
-          const cloned = model.clone();
-          this.attachToHead(cloned);
-          resolve(cloned);
-        },
-        undefined,
-        (err) => {
-          console.error('[HairPlugin] Failed to load 3D hair model:', err);
-          resolve(null);
-        }
-      );
-    });
-  }
-
-  private applyHairMaterials(model: THREE.Group) {
-    model.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-
-        // Ensure materials support reflections and soft alpha clipping
-        const mat = child.material as THREE.MeshStandardMaterial;
-        if (mat) {
-          mat.envMap = this.envMap;
-          mat.envMapIntensity = 0.8;
-          mat.transparent = true;
-          mat.alphaTest = 0.15; // Clip transparent boundaries
-          mat.roughness = 0.85; // Hair is generally matte
-        }
-      }
-    });
-  }
-
-  private attachToHead(model: THREE.Group) {
+    this.loadedModel = model;
     this.currentModel = model;
-    
-    // Position near top/back of skull
-    model.position.set(0, this.offsetY * 10, this.offsetZ * 10);
-    model.scale.setScalar(this.scale * 10.8);
-    
-    this.headGroup.add(model);
-    
+    this.headGroup.add(this.currentModel);
+
+    // Initialize animation properties
+    this.animationState = 'fade-in';
+    this.animationTime = 0;
+
+    this.currentModel.scale.set(0, 0, 0);
+    this.setOpacity(0);
+
     this.prevHeadPos.copy(this.headGroup.position);
     this.displacement.set(0, 0, 0);
     this.velocity.set(0, 0, 0);
-    
-    // Trigger recoloring immediately
+
+    // Apply color tinting
     this.setColor(this.hairColor);
   }
 
-  /**
-   * Applies recoloring to the hair model.
-   * Supports standard color presets or direct hex codes.
-   */
-  public setColor(colorName: string) {
-    this.hairColor = colorName;
+  public update(frame: { anchors: any; blendshapes?: any[]; dt: number; width: number; height: number }): void {
+    let animScale = 1.0;
+    let animOpacity = 1.0;
+
+    // 1. Process fade transitions
+    if (this.animationState === 'fade-in') {
+      this.animationTime += frame.dt;
+      const progress = Math.min(this.animationTime / this.transitionDuration, 1.0);
+      animScale = progress;
+      animOpacity = progress;
+      if (progress >= 1.0) {
+        this.animationState = 'idle';
+      }
+    } else if (this.animationState === 'fade-out') {
+      this.animationTime += frame.dt;
+      const progress = Math.min(this.animationTime / this.transitionDuration, 1.0);
+      animScale = 1.0 - progress;
+      animOpacity = 1.0 - progress;
+      if (progress >= 1.0) {
+        this.clearCurrentModel();
+        return;
+      }
+    } else if (!this.currentModel) {
+      return;
+    }
+
+    // 2. Perform spring physics swaying updates
+    this.updatePhysics(frame.dt);
+
+    // 3. Anchor tracking updates
+    if (this.currentModel && frame.anchors) {
+      const anchor = frame.anchors.getHairAnchor();
+      if (anchor && anchor.confidence > 0.5) {
+        this.currentModel.visible = this.visible;
+
+        // Position: anchored at hairline + offsets + physics swaying displacement
+        this.currentModel.position.set(
+          anchor.position.x + this.displacement.x,
+          anchor.position.y + this.offsetY * 10 + this.displacement.y,
+          anchor.position.z + this.offsetZ * 10 + this.displacement.z
+        );
+
+        // Rotation: aligned with head + physics sway tilt angle
+        const baseQuat = anchor.rotation.clone();
+        const swayRot = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(this.displacement.z * 0.35, 0, -this.displacement.x * 0.35)
+        );
+        this.currentModel.quaternion.copy(baseQuat).multiply(swayRot);
+
+        // Scale: relative to face width (anchor.scaleRef)
+        // Normalized model width is 1.0. Scale factor 1.05 fits head width perfectly.
+        const sizeScale = anchor.scaleRef * this.scale * 1.05 * animScale;
+        this.currentModel.scale.setScalar(sizeScale);
+
+        // Opacity
+        this.setOpacity(animOpacity);
+      } else {
+        this.currentModel.visible = false;
+      }
+    }
+  }
+
+  private updatePhysics(dt: number): void {
+    if (!this.currentModel) return;
+
+    // Head acceleration (spring inertia driver)
+    const currentHeadPos = this.headGroup.position;
+    const acceleration = new THREE.Vector3()
+      .subVectors(currentHeadPos, this.prevHeadPos)
+      .multiplyScalar(1.0 / (dt * dt + 0.0001));
+
+    acceleration.clampLength(0, 150); // Clamp sudden jitters
+    this.prevHeadPos.copy(currentHeadPos);
+
+    // Spring equation calculations
+    const springForce = this.displacement.clone().multiplyScalar(-this.stiffness);
+    const dampingForce = this.velocity.clone().multiplyScalar(-this.damping);
+    const inertiaForce = acceleration.multiplyScalar(-0.015); // mass factor
+
+    const netAcceleration = new THREE.Vector3()
+      .add(springForce)
+      .add(dampingForce)
+      .add(inertiaForce);
+
+    this.velocity.addScaledVector(netAcceleration, dt);
+    this.displacement.addScaledVector(this.velocity, dt);
+    this.displacement.clampLength(0, 0.4); // Clamp maximum sway distance
+  }
+
+  public setConfig(config: any): void {
+    if (config.scale !== undefined) this.scale = config.scale;
+    if (config.offsetY !== undefined) this.offsetY = config.offsetY;
+    if (config.offsetZ !== undefined) this.offsetZ = config.offsetZ;
+    if (config.visible !== undefined) this.visible = config.visible;
+    if (config.color !== undefined) {
+      this.hairColor = config.color;
+      this.setColor(this.hairColor);
+    }
+  }
+
+  public remove(): void {
+    if (this.currentModel && this.animationState !== 'fade-out') {
+      this.animationState = 'fade-out';
+      this.animationTime = 0;
+    } else if (!this.currentModel) {
+      this.clearCurrentModel();
+    }
+  }
+
+  public dispose(): void {
+    this.clearCurrentModel();
+  }
+
+  private clearCurrentModel(): void {
+    if (this.currentModel) {
+      this.headGroup.remove(this.currentModel);
+      this.currentModel = null;
+    }
+    this.loadedModel = null;
+    this.animationState = 'idle';
+  }
+
+  private setColor(colorName: string): void {
     if (!this.currentModel) return;
 
     let targetColor = new THREE.Color(0x3a2314); // Default Brown
-    let opacity = 1.0;
+    let isOriginal = false;
 
     const colorMap: Record<string, number> = {
       black: 0x0a0a0a,
@@ -141,97 +203,35 @@ export class HairPlugin {
     } else if (colorName.startsWith('#')) {
       targetColor.set(colorName);
     } else {
-      // 'Original' -> restore default model texture colors without override tint
-      this.currentModel.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          const mat = child.material as THREE.MeshStandardMaterial;
-          if (mat) mat.color.setHex(0xffffff); // resetting to neutral
-        }
-      });
-      return;
+      isOriginal = true;
     }
 
     this.currentModel.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         const mat = child.material as THREE.MeshStandardMaterial;
         if (mat) {
-          // Multiply color tint to preserve original dark highlights / shadows
-          mat.color.copy(targetColor);
-          mat.opacity = opacity;
+          if (isOriginal) {
+            mat.color.setHex(0xffffff); // resetting override tint to neutral
+          } else {
+            mat.color.copy(targetColor);
+          }
         }
       }
     });
   }
 
-  /**
-   * Run spring-mass physics sways to simulate hair inertia
-   *
-   * @param dt Elapsed delta time in seconds
-   */
-  public updatePhysics(dt: number) {
+  private setOpacity(opacity: number): void {
     if (!this.currentModel) return;
-
-    // 1. Calculate head acceleration (inertia source)
-    const currentHeadPos = this.headGroup.position;
-    const acceleration = new THREE.Vector3()
-      .subVectors(currentHeadPos, this.prevHeadPos)
-      .multiplyScalar(1.0 / (dt * dt + 0.0001)); // a = d^2x / dt^2
-    
-    // Clamp acceleration spike
-    acceleration.clampLength(0, 150);
-
-    // Save position
-    this.prevHeadPos.copy(currentHeadPos);
-
-    // 2. Solve Spring Equation: F = -kx - cv
-    // Acceleration acts as a force in the opposite direction
-    const springForce = this.displacement.clone().multiplyScalar(-this.stiffness);
-    const dampingForce = this.velocity.clone().multiplyScalar(-this.damping);
-    const inertiaForce = acceleration.multiplyScalar(-0.015); // mass multiplier
-
-    const netAcceleration = new THREE.Vector3()
-      .add(springForce)
-      .add(dampingForce)
-      .add(inertiaForce);
-
-    // 3. Integrate: v = v + a*dt, x = x + v*dt
-    this.velocity.addScaledVector(netAcceleration, dt);
-    this.displacement.addScaledVector(this.velocity, dt);
-
-    // Limit displacement to avoid clipping
-    this.displacement.clampLength(0, 0.4);
-
-    // 4. Apply displacement to hair model position as a sway offset
-    this.currentModel.position.set(
-      0 + this.displacement.x,
-      (this.offsetY * 10) + this.displacement.y,
-      (this.offsetZ * 10) + this.displacement.z
-    );
-
-    // Add small rotation tilt relative to displacement sway
-    this.currentModel.rotation.set(
-      this.displacement.z * 0.35,
-      0,
-      -this.displacement.x * 0.35
-    );
-  }
-
-  public setOffsets(scale: number, offsetY: number, offsetZ: number) {
-    this.scale = scale;
-    this.offsetY = offsetY;
-    this.offsetZ = offsetZ;
-
-    if (this.currentModel) {
-      this.currentModel.position.set(0, offsetY * 10, offsetZ * 10);
-      this.currentModel.scale.setScalar(scale * 10.8);
-    }
-  }
-
-  public clear() {
-    if (this.currentModel) {
-      this.headGroup.remove(this.currentModel);
-      this.currentModel = null;
-    }
+    this.currentModel.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const mat = child.material as THREE.Material;
+        if (mat) {
+          mat.transparent = true;
+          mat.opacity = opacity;
+        }
+      }
+    });
   }
 }
+
 export default HairPlugin;

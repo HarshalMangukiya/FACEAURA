@@ -81,7 +81,12 @@ export class FaceGeometry {
    * @param width Video width
    * @param height Video height
    */
-  public update(landmarks: Array<{ x: number; y: number; z: number }>, width: number = 640, height: number = 480): void {
+  public update(
+    landmarks: Array<{ x: number; y: number; z: number }>,
+    width: number = 640,
+    height: number = 480,
+    headMatrixInverse?: THREE.Matrix4
+  ): void {
     if (!landmarks || landmarks.length < 468) return;
 
     const posAttr = this.geometry.getAttribute('position') as THREE.BufferAttribute;
@@ -97,14 +102,19 @@ export class FaceGeometry {
       // - Flip Y axis (MediaPipe Y points down, Three.js Y points up).
       // - Multiply X by aspect ratio to preserve face proportions.
       // - Scale to suitable size in world units.
-      const worldX = (pt.x - 0.5) * aspect * 10;
-      const worldY = -(pt.y - 0.5) * 10;
-      // Z coordinate from MediaPipe is scaled relative to face size. Negate to point inside.
-      const worldZ = -pt.z * 10;
+      const worldPt = new THREE.Vector3(
+        (pt.x - 0.5) * aspect * 10,
+        -(pt.y - 0.5) * 10,
+        -pt.z * 10
+      );
 
-      this.positions[i * 3 + 0] = worldX;
-      this.positions[i * 3 + 1] = worldY;
-      this.positions[i * 3 + 2] = worldZ;
+      if (headMatrixInverse) {
+        worldPt.applyMatrix4(headMatrixInverse);
+      }
+
+      this.positions[i * 3 + 0] = worldPt.x;
+      this.positions[i * 3 + 1] = worldPt.y;
+      this.positions[i * 3 + 2] = worldPt.z;
 
       // 2. Project texture UV coordinates.
       // Simply map normalized landmark positions directly as texture UV.

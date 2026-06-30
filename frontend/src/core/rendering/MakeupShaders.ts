@@ -59,6 +59,11 @@ const fragmentShader = `
   uniform vec2 uLipBoundsMin;
   uniform vec2 uLipBoundsMax;
 
+  // Beauty & Bilateral Filter Uniforms
+  uniform float uSmoothness;
+  uniform float uBlemishReduction;
+  uniform vec2 uTextureSize;
+
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
@@ -74,6 +79,30 @@ const fragmentShader = `
     // 1. Sample original camera frame texture at this UV location
     vec4 baseColor = texture2D(uVideoTexture, vUv);
     vec3 finalColor = baseColor.rgb;
+
+    // Apply bilateral skin smoothing filter (Beauty Filter) directly on GPU
+    if (uSmoothness > 0.01) {
+      vec3 sumColor = vec3(0.0);
+      float sumWeight = 0.0;
+      vec2 texelSize = 1.0 / uTextureSize;
+      
+      // Sample 5x5 bilateral grid around the current UV
+      for (int i = -2; i <= 2; i++) {
+        for (int j = -2; j <= 2; j++) {
+          vec2 offset = vec2(float(i), float(j)) * texelSize * (1.0 + uBlemishReduction * 1.5);
+          vec3 cColor = texture2D(uVideoTexture, vUv + offset).rgb;
+          
+          float factorSpatial = exp(-float(i*i + j*j) / 8.0); // Spatial decay factor
+          float factorRange = exp(-length(cColor - baseColor.rgb) / 0.15); // Edge preservation range factor
+          
+          float weight = factorSpatial * factorRange;
+          sumColor += cColor * weight;
+          sumWeight += weight;
+        }
+      }
+      vec3 smoothed = sumColor / (sumWeight + 0.0001);
+      finalColor = mix(baseColor.rgb, smoothed, uSmoothness * 0.85);
+    }
 
     // 2. APPLY FOUNDATION (All skin area - base layer)
     // Foundation is applied softly across the face geometry to even skin tone
@@ -197,7 +226,12 @@ export class MakeupShaderMaterial extends THREE.ShaderMaterial {
 
         // Lips Bounds
         uLipBoundsMin: { value: new THREE.Vector2(0, 0) },
-        uLipBoundsMax: { value: new THREE.Vector2(0, 0) }
+        uLipBoundsMax: { value: new THREE.Vector2(0, 0) },
+
+        // Beauty / Bilateral smoothing
+        uSmoothness: { value: 0.0 },
+        uBlemishReduction: { value: 0.0 },
+        uTextureSize: { value: new THREE.Vector2(640, 480) }
       },
       transparent: true,
       depthWrite: false,

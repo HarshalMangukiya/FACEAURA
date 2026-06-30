@@ -1,12 +1,5 @@
-/**
- * MakeupPlugin.tsx
- *
- * Integrates the WebGL MakeupShaderMaterial with the SceneManager.
- * Translates configuration choices (Lipstick shade, blush opacity, eyeshadow tone, skin brightening)
- * into uniforms updates, and maps dynamic landmarks features to shader coordinates.
- */
-
 import * as THREE from 'three';
+import { IAccessoryPlugin } from '../IAccessoryPlugin';
 import { MakeupShaderMaterial } from '../../rendering/MakeupShaders';
 import { SceneManager } from '../../rendering/SceneManager';
 
@@ -14,25 +7,26 @@ export interface MakeupConfig {
   lipstickColor: string;
   lipstickOpacity: number;
   lipstickGloss: number;
-  
   blushColor: string;
   blushOpacity: number;
   blushRadius: number;
-
   foundationColor: string;
   foundationOpacity: number;
   skinBrightening: number;
-
   contourOpacity: number;
-
   shadowColor: string;
   shadowOpacity: number;
+  smoothness?: number;
+  blemishReduction?: number;
+  textureSize?: THREE.Vector2;
+  visible?: boolean;
 }
 
-export class MakeupPlugin {
+export class MakeupPlugin implements IAccessoryPlugin {
   private material: MakeupShaderMaterial;
   private sceneManager: SceneManager;
-  private isApplied: boolean = false;
+  public isApplied: boolean = false;
+  private visible: boolean = true;
 
   constructor(sceneManager: SceneManager) {
     this.sceneManager = sceneManager;
@@ -42,7 +36,11 @@ export class MakeupPlugin {
   /**
    * Applies the makeup shader on the face mesh geometry.
    */
-  public apply() {
+  public attach(model: THREE.Group | null = null): void {
+    this.apply();
+  }
+
+  private apply(): void {
     if (this.isApplied) return;
     this.sceneManager.setFaceMaterial(this.material);
     this.isApplied = true;
@@ -51,35 +49,41 @@ export class MakeupPlugin {
   /**
    * Restores the default occlusion material on the face mesh.
    */
-  public remove() {
+  public remove(): void {
     if (!this.isApplied) return;
     this.sceneManager.setFaceMaterial(null);
     this.isApplied = false;
   }
 
   /**
-   * Updates WebGL texture input with the current webcam video stream
+   * Updates landmark coordinates uniforms and sets current video texture.
    */
-  public updateVideoTexture(videoTexture: THREE.VideoTexture) {
-    this.material.uniforms.uVideoTexture.value = videoTexture;
-  }
+  public update(frame: { anchors: any; blendshapes?: any[]; dt: number; width: number; height: number; landmarks?: any[] }): void {
+    if (!this.isApplied || !this.visible) return;
 
-  /**
-   * Updates landmark coordinates uniforms so shaders can track facial features.
-   */
-  public updatePose(landmarks: any[]) {
-    if (this.isApplied && landmarks && landmarks.length > 0) {
-      this.material.updateFeatureUniforms(landmarks);
+    if (frame.landmarks && frame.landmarks.length > 0) {
+      this.material.updateFeatureUniforms(frame.landmarks);
+    }
+
+    const videoTexture = this.sceneManager.getVideoTexture();
+    if (videoTexture) {
+      this.material.uniforms.uVideoTexture.value = videoTexture;
     }
   }
 
   /**
-   * Updates makeup styling options.
-   *
-   * @param config Configurations dictionary
+   * Updates makeup styling shader uniforms directly.
    */
-  public configure(config: Partial<MakeupConfig>) {
+  public setConfig(config: Partial<MakeupConfig>): void {
     this.apply();
+
+    if (config.visible !== undefined) {
+      this.visible = config.visible;
+      if (!this.visible) {
+        this.remove();
+        return;
+      }
+    }
 
     if (config.lipstickColor !== undefined) {
       this.material.uniforms.uLipstickColor.value.set(config.lipstickColor);
@@ -121,6 +125,21 @@ export class MakeupPlugin {
     if (config.shadowOpacity !== undefined) {
       this.material.uniforms.uShadowOpacity.value = config.shadowOpacity;
     }
+
+    if (config.smoothness !== undefined) {
+      this.material.uniforms['uSmoothness']!.value = config.smoothness;
+    }
+    if (config.blemishReduction !== undefined) {
+      this.material.uniforms['uBlemishReduction']!.value = config.blemishReduction;
+    }
+    if (config.textureSize !== undefined) {
+      this.material.uniforms['uTextureSize']!.value.copy(config.textureSize);
+    }
+  }
+
+  public dispose(): void {
+    this.remove();
   }
 }
+
 export default MakeupPlugin;
